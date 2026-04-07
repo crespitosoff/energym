@@ -107,10 +107,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase, fetchRole])
 
   const signOut = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-    setRole(null)
-    window.location.href = '/login'
+    try {
+      await supabase.auth.signOut()
+    } catch (err) {
+      console.error('Error on signout:', err)
+    } finally {
+      setUser(null)
+      setRole(null)
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('energym_role_')) localStorage.removeItem(key)
+      })
+      window.location.href = '/login'
+    }
   }
 
   return (
