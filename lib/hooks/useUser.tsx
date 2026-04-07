@@ -121,6 +121,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
       sessionStorage.clear()
+
+      // Force delete all cookies (fixes mobile next/ssr caching)
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+      });
+
       window.location.href = '/login'
     }
   }
