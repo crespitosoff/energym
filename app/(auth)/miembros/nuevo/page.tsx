@@ -32,8 +32,6 @@ export default function NuevoMiembroPage() {
     fecha_inicio: new Date().toISOString().split('T')[0],
   })
 
-  const [pagos, setPagos] = useState([{ metodo: 'efectivo', monto: '' }])
-
   useEffect(() => {
     Promise.all([
       fetch('/api/plans').then(r => r.json()),
@@ -67,18 +65,7 @@ export default function NuevoMiembroPage() {
       return
     }
 
-    if (selectedPlan && selectedPlan.precio > 0 && !session) {
-      setError('Debes abrir la caja antes de registrar un cobro.')
-      return
-    }
 
-    if (selectedPlan && selectedPlan.precio > 0) {
-      const sumPagos = pagos.reduce((s, p) => s + (parseFloat(p.monto) || 0), 0)
-      if (Math.abs(sumPagos - selectedPlan.precio) > 0.01) {
-        setError(`Los pagos ingresados no suman el valor del plan ($${selectedPlan.precio.toLocaleString('es-CO')})`)
-        return
-      }
-    }
 
     setLoading(true)
 
@@ -86,7 +73,6 @@ export default function NuevoMiembroPage() {
       ...form,
       fecha_nacimiento: form.fecha_nacimiento || null,
       telefono: form.telefono || null,
-      pagos: selectedPlan && selectedPlan.precio > 0 ? pagos.map((p) => ({ metodo: p.metodo, monto: parseFloat(p.monto) || 0 })) : [{ metodo: 'efectivo', monto: 0 }],
       register_session_id: session?.id || null
     }
 
@@ -110,13 +96,7 @@ export default function NuevoMiembroPage() {
     setForm((prev) => ({ ...prev, [field]: value }))
   }
 
-  const addPago = () => setPagos([...pagos, { metodo: 'efectivo', monto: '' }])
-  const removePago = (i: number) => setPagos(pagos.filter((_, idx) => idx !== i))
-  const updatePago = (i: number, field: string, val: string) => {
-    const updated = [...pagos]
-    updated[i] = { ...updated[i], [field]: val }
-    setPagos(updated)
-  }
+
 
   const vencimientoEstimado = selectedPlan && form.fecha_inicio
     ? new Date(new Date(form.fecha_inicio).getTime() + selectedPlan.dias_duracion * 86400000)
@@ -143,15 +123,7 @@ export default function NuevoMiembroPage() {
             </div>
           )}
 
-          {!session && (
-            <div className="mb-5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex flex-col items-center justify-center text-center gap-2 animate-slide-down">
-              <svg className="w-6 h-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-              </svg>
-              <p className="text-amber-400 text-sm font-medium">La caja está cerrada</p>
-              <p className="text-amber-400/80 text-xs max-w-[250px]">No podrás registrar una nueva membresía con cobro sin antes abrir la caja.</p>
-            </div>
-          )}
+
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Datos personales */}
@@ -226,10 +198,6 @@ export default function NuevoMiembroPage() {
                     value={form.plan_id}
                     onChange={(e) => {
                       updateField('plan_id', e.target.value)
-                      const plan = plans.find(p => p.id === e.target.value)
-                      if (plan && pagos.length === 1) {
-                         updatePago(0, 'monto', plan.precio.toString())
-                      }
                     }}
                     className="input-field appearance-none cursor-pointer"
                     required
@@ -288,62 +256,10 @@ export default function NuevoMiembroPage() {
               </div>
             </fieldset>
 
-            {selectedPlan && selectedPlan.precio > 0 && session && (
-              <>
-                <div className="border-t border-white/5" />
-                <fieldset>
-                  <legend className="text-xs font-semibold text-white/30 uppercase tracking-wider mb-3 flex items-center justify-between w-full">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
-                      </svg>
-                      Métodos de Pago
-                    </div>
-                    <button type="button" onClick={addPago} className="text-brand-400 hover:text-brand-300 font-medium normal-case text-xs">
-                      + Agregar método
-                    </button>
-                  </legend>
-                  <div className="space-y-2">
-                    {pagos.map((pago, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <select
-                          value={pago.metodo}
-                          onChange={(e) => updatePago(i, 'metodo', e.target.value)}
-                          className="input-field appearance-none cursor-pointer flex-1"
-                        >
-                          <option value="efectivo">💵 Efectivo</option>
-                          <option value="tarjeta">💳 Tarjeta</option>
-                          <option value="transferencia">📱 Transferencia</option>
-                        </select>
-                        <input
-                          type="number"
-                          value={pago.monto}
-                          onChange={(e) => updatePago(i, 'monto', e.target.value)}
-                          placeholder="$0"
-                          className="input-field w-32"
-                          min="0"
-                          step="100"
-                        />
-                        {pagos.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removePago(i)}
-                            className="w-10 h-10 rounded-lg hover:bg-red-500/10 flex items-center justify-center text-white/30 hover:text-red-400 transition-colors shrink-0"
-                          >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </fieldset>
-              </>
-            )}
+
 
             <div className="flex gap-3 pt-2">
-              <Button type="submit" loading={loading} className="flex-1" disabled={!!(selectedPlan && selectedPlan.precio > 0 && !session)}>
+              <Button type="submit" loading={loading} className="flex-1">
                 Registrar Miembro
               </Button>
               <Button type="button" variant="secondary" onClick={() => router.back()}>

@@ -59,20 +59,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ data: null, error: 'Debes seleccionar un plan de membresía' }, { status: 400 })
   }
 
-  // Si hay pagos, validar que venga la sesion (si es requerida)
-  if (!pagos || !Array.isArray(pagos) || pagos.length === 0) {
-    return NextResponse.json({ data: null, error: 'Debes proveer métodos de pago para la membresía' }, { status: 400 })
-  }
-
-  // Get plan details for sale price
+  // Get plan details just to verify plan exists
   const { data: plan } = await auth.supabase.from('plans').select('precio').eq('id', plan_id).single()
   if (!plan) {
     return NextResponse.json({ data: null, error: 'Plan no encontrado' }, { status: 404 })
-  }
-
-  const totalPayments = pagos.reduce((sum: number, p: any) => sum + (parseFloat(p.monto) || 0), 0)
-  if (Math.abs(totalPayments - plan.precio) > 0.01) {
-    return NextResponse.json({ data: null, error: 'Los pagos no suman el valor del plan' }, { status: 400 })
   }
 
   const { data, error } = await auth.supabase
@@ -101,39 +91,8 @@ export async function POST(request: NextRequest) {
 
   const newMember = data
 
-  // Register sale
-  const { data: sale, error: saleErr } = await auth.supabase
-    .from('sales')
-    .insert({
-      member_id: newMember.id,
-      plan_id: plan_id,
-      concepto: 'nueva_membresia',
-      descripcion: `Nueva membresía (${nombre} ${apellido})`,
-      monto_total: plan.precio,
-      register_session_id: register_session_id || null,
-      created_by: auth.user.id
-    })
-    .select()
-    .single()
-
-  if (saleErr) {
-    return NextResponse.json({ data: newMember, error: 'Miembro creado, pero falló registro de venta: ' + saleErr.message }, { status: 201 })
-  }
-
-  // Register payments
-  const paymentsData = pagos.map((p: any) => ({
-    sale_id: sale.id,
-    metodo: p.metodo,
-    monto: parseFloat(p.monto) || 0
-  }))
-
-  const { error: paymentsErr } = await auth.supabase
-    .from('sale_payments')
-    .insert(paymentsData)
-
-  if (paymentsErr) {
-    return NextResponse.json({ data: newMember, error: 'Miembro creado, pero falló registro de pagos: ' + paymentsErr.message }, { status: 201 })
-  }
+  // NOTA: Inserciones en 'sales' y 'sale_payments' comentadas/bypasseadas 
+  // para permitir creación de miembros independiente de la caja.
 
   return NextResponse.json({ data, error: null }, { status: 201 })
 }
