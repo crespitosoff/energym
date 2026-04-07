@@ -114,9 +114,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setUser(null)
       setRole(null)
+      // Clean up localstorage on logout
       Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('energym_role_')) localStorage.removeItem(key)
+        if (key.startsWith('energym_') || key.startsWith('sb-')) {
+          localStorage.removeItem(key)
+        }
       })
+      sessionStorage.clear()
       window.location.href = '/login'
     }
   }
