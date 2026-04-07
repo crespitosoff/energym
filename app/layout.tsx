@@ -1,9 +1,19 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+export const viewport: Viewport = {
+  themeColor: "#0a0a0f",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
-  title: "Energym - Gestión de Gimnasio",
-  description: "Sistema de gestión para gimnasios",
+  title: "EnerGym — Gestión de Gimnasio",
+  description: "Sistema inteligente de gestión de membresías para gimnasios. Controla clientes, planes y vencimientos.",
+  keywords: ["gimnasio", "gestión", "membresías", "EnerGym"],
+  authors: [{ name: "EnerGym" }],
 };
 
 export default function RootLayout({
@@ -12,20 +22,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
-      <body className="bg-gray-100 min-h-screen">
-        <nav className="bg-blue-600 text-white p-4 shadow-md">
-          <div className="max-w-4xl mx-auto flex justify-between items-center">
-            <a href="/" className="text-xl font-bold">Energym</a>
-            <div className="space-x-4">
-              <a href="/dashboard" className="hover:underline">Dashboard</a>
-              <a href="/login" className="hover:underline">Login</a>
-            </div>
-          </div>
-        </nav>
-        <main className="max-w-4xl mx-auto p-4">
-          {children}
-        </main>
+    <html lang="es" className="dark" data-scroll-behavior="smooth">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+      </head>
+      <body className="bg-surface-0 text-white antialiased">
+        {children}
       </body>
     </html>
   );

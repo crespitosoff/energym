@@ -1,3 +1,261 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f1f5f9;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --border-color: #e2e8f0;
+    --brand-primary: #1a6bf5;
+    --brand-glow: rgba(59, 143, 255, 0.15);
+    --accent-green: #22c55e;
+    --accent-orange: #fb923c;
+    --accent-red: #ef4444;
+  }
+
+  .dark {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #12121a;
+    --bg-card: #1a1a25;
+    --bg-card-hover: #232330;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border-color: #2e2e3d;
+    --brand-primary: #3b8fff;
+    --brand-glow: rgba(59, 143, 255, 0.2);
+    --accent-green: #4ade80;
+    --accent-orange: #fb923c;
+    --accent-red: #fb7185;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100dvh;
+  }
+}
+
+@layer components {
+  /* ============================================
+     GLASSMORPHISM
+     ============================================ */
+  .glass {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
+
+  /* ============================================
+     BUTTONS
+     ============================================ */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2
+           px-5 py-2.5 
+           bg-brand-600 hover:bg-brand-700 active:bg-brand-800
+           text-white font-medium text-sm
+           rounded-xl
+           transition-all duration-200 ease-out
+           hover:shadow-glow active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2
+           px-5 py-2.5
+           bg-surface-200 hover:bg-surface-300
+           text-white/90 font-medium text-sm
+           rounded-xl border border-white/5
+           transition-all duration-200 ease-out
+           hover:border-white/10 active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2
+           px-5 py-2.5
+           bg-red-500/10 hover:bg-red-500/20
+           text-red-400 font-medium text-sm
+           rounded-xl border border-red-500/20
+           transition-all duration-200 ease-out
+           hover:border-red-500/30 active:scale-[0.98]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 focus-visible:ring-offset-2;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2
+           px-4 py-2
+           text-white/60 hover:text-white/90 hover:bg-white/5
+           font-medium text-sm rounded-xl
+           transition-all duration-200 ease-out
+           active:scale-[0.98]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20;
+  }
+
+  .btn-icon {
+    @apply inline-flex items-center justify-center
+           w-10 h-10 min-w-[44px] min-h-[44px]
+           rounded-xl
+           text-white/60 hover:text-white hover:bg-white/5
+           transition-all duration-200 ease-out
+           active:scale-[0.95]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20;
+  }
+
+  /* ============================================
+     INPUTS
+     ============================================ */
+  .input-field {
+    @apply w-full px-4 py-3
+           bg-surface-100 hover:bg-surface-200
+           text-white placeholder:text-white/30
+           border border-white/5 hover:border-white/10
+           rounded-xl text-sm
+           transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500/50
+           focus:bg-surface-200;
+  }
+
+  .input-label {
+    @apply block text-sm font-medium text-white/70 mb-1.5;
+  }
+
+  /* ============================================
+     CARDS
+     ============================================ */
+  .card {
+    @apply bg-surface-100 border border-white/5 rounded-2xl p-5
+           transition-all duration-300;
+  }
+
+  .card-interactive {
+    @apply card hover:bg-surface-200 hover:border-white/10
+           hover:-translate-y-0.5 hover:shadow-glass
+           cursor-pointer;
+  }
+
+  /* ============================================
+     STATUS BADGES
+     ============================================ */
+  .badge {
+    @apply inline-flex items-center gap-1.5
+           px-2.5 py-1 rounded-full
+           text-xs font-semibold uppercase tracking-wider;
+  }
+
+  .badge-activo {
+    @apply badge bg-emerald-500/15 text-emerald-400 border border-emerald-500/20;
+  }
+
+  .badge-por-vencer {
+    @apply badge bg-amber-500/15 text-amber-400 border border-amber-500/20;
+  }
+
+  .badge-vencido {
+    @apply badge bg-red-500/15 text-red-400 border border-red-500/20;
+  }
+
+  /* ============================================
+     SCROLLBAR
+     ============================================ */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  /* ============================================
+     SKELETON LOADING
+     ============================================ */
+  .skeleton {
+    @apply bg-surface-200 rounded-lg animate-pulse;
+  }
+
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.02) 0%,
+      rgba(255, 255, 255, 0.06) 50%,
+      rgba(255, 255, 255, 0.02) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+
+  /* ============================================
+     MISC
+     ============================================ */
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-brand;
+  }
+
+  .dot-indicator {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .divider {
+    @apply h-px bg-white/5 my-4;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
