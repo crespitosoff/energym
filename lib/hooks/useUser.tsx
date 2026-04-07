@@ -34,19 +34,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
 
   const fetchRole = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .single()
+    // Try to get from localStorage first to show UI immediately
+    const cachedRole = localStorage.getItem(`energym_role_${userId}`)
+    if (cachedRole) {
+      setRole(cachedRole as UserRole)
+      setLoading(false)
+    }
 
-    if (data) {
-      setRole((data as { role: string }).role as UserRole)
+    try {
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single()
+
+      if (data) {
+        setRole((data as { role: string }).role as UserRole)
+        localStorage.setItem(`energym_role_${userId}`, data.role)
+      }
+    } catch (err) {
+      console.error('Error fetching role:', err)
     }
   }, [supabase])
 
   useEffect(() => {
     let mounted = true
+
+    // Safety timeout: stop loading after 5 seconds to prevent frozen UI
+    const loadingTimeout = setTimeout(() => {
+      if (mounted) setLoading(false)
+    }, 5000)
 
     // Get initial session
     const getSession = async () => {
@@ -73,6 +90,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await fetchRole(currentUser.id)
         } else {
           setRole(null)
+          // Clean up localstorage on logout
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('energym_role_')) localStorage.removeItem(key)
+          })
         }
         if (mounted) setLoading(false)
       }
@@ -80,6 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false
+      clearTimeout(loadingTimeout)
       subscription.unsubscribe()
     }
   }, [supabase, fetchRole])

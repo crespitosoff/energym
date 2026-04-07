@@ -143,7 +143,8 @@ export default function MiembrosPage() {
                   w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold shrink-0
                   ${member.estado === 'activo' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
                     member.estado === 'por_vencer' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                      'bg-red-500/10 text-red-400 border border-red-500/20'
+                    member.estado === 'vencido' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                      'bg-surface-200 text-white/40 border border-white/5'
                   }
                 `}>
                   {member.nombre[0]}{member.apellido[0]}

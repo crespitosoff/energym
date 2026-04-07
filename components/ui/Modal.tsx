@@ -8,9 +8,10 @@ interface ModalProps {
   title?: string
   children: React.ReactNode
   footer?: React.ReactNode
+  size?: 'md' | 'lg'
 }
 
-export default function Modal({ open, onClose, title, children, footer }: ModalProps) {
+export default function Modal({ open, onClose, title, children, footer, size = 'md' }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -35,15 +36,17 @@ export default function Modal({ open, onClose, title, children, footer }: ModalP
 
   if (!open) return null
 
+  const maxWidthClass = size === 'lg' ? 'max-w-3xl' : 'max-w-lg'
+
   return (
     <dialog
       ref={dialogRef}
-      className="
+      className={`
         bg-transparent p-0 m-auto
         backdrop:bg-black/60 backdrop:backdrop-blur-sm
-        max-w-lg w-[calc(100%-2rem)]
+        ${maxWidthClass} w-[calc(100%-2rem)]
         animate-scale-in
-      "
+      `}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}

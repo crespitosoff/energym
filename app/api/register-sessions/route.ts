@@ -54,11 +54,15 @@ export async function POST(request: NextRequest) {
   const body = await request.json()
   const { initial_cash } = body
 
+  if (initial_cash === undefined || initial_cash === null || initial_cash === '' || parseFloat(initial_cash) <= 0) {
+    return NextResponse.json({ data: null, error: 'Debes ingresar un monto inicial mayor a $0.' }, { status: 400 })
+  }
+
   const { data, error } = await auth.supabase
     .from('register_sessions')
     .insert({
       opened_by: auth.user.id,
-      initial_cash: initial_cash || 0,
+      initial_cash: parseFloat(initial_cash) || 0,
     } as any)
     .select()
     .single()
@@ -80,12 +84,16 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ data: null, error: 'session_id es requerido' }, { status: 400 })
   }
 
+  if (final_cash === undefined || final_cash === null || final_cash === '') {
+    return NextResponse.json({ data: null, error: 'Debes ingresar el efectivo final en caja' }, { status: 400 })
+  }
+
   const { data, error } = await auth.supabase
     .from('register_sessions')
     .update({
       closed_by: auth.user.id,
       closed_at: new Date().toISOString(),
-      final_cash: final_cash ?? 0,
+      final_cash: parseFloat(final_cash) || 0,
       notes: notes || null,
     } as any)
     .eq('id', session_id)

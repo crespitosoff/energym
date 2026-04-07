@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import { PageLoader } from '@/components/ui/Spinner'
+import StatusBadge from '@/components/ui/StatusBadge'
 
 interface RegisterSession {
   id: string
@@ -45,6 +46,7 @@ export default function CajaPage() {
   const { role } = useUser()
   const [session, setSession] = useState<RegisterSession | null>(null)
   const [sales, setSales] = useState<Sale[]>([])
+  const [closedSessions, setClosedSessions] = useState<RegisterSession[]>([])
   
   // Data for renovation modal
   const [members, setMembers] = useState<{id: string, nombre: string, apellido: string}[]>([])
@@ -54,7 +56,7 @@ export default function CajaPage() {
 
   // Open caja modal
   const [showOpen, setShowOpen] = useState(false)
-  const [openCash, setOpenCash] = useState('0')
+  const [openCash, setOpenCash] = useState('')
   const [openLoading, setOpenLoading] = useState(false)
 
   // Close caja modal
@@ -62,6 +64,7 @@ export default function CajaPage() {
   const [closeCash, setCloseCash] = useState('')
   const [closeNotes, setCloseNotes] = useState('')
   const [closeLoading, setCloseLoading] = useState(false)
+  const [conteo, setConteo] = useState<Record<number, number>>({})
 
   // Renovation modal
   const [showSale, setShowSale] = useState(false)
@@ -72,22 +75,27 @@ export default function CajaPage() {
     plan_id: '',
   })
   const [pagos, setPagos] = useState([{ metodo: 'efectivo', monto: '' }])
+  const [memberSearch, setMemberSearch] = useState('')
+  const [showMemberDropdown, setShowMemberDropdown] = useState(false)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const [sessionRes, salesRes, membersRes, plansRes] = await Promise.all([
+    const [sessionRes, closedSessionRes, salesRes, membersRes, plansRes] = await Promise.all([
       fetch('/api/register-sessions?current=true'),
+      fetch('/api/register-sessions'),
       fetch('/api/sales?limit=30'),
       fetch('/api/members?limit=300'),
       fetch('/api/plans'),
     ])
-    const [sessionJson, salesJson, membersJson, plansJson] = await Promise.all([
-      sessionRes.json(), salesRes.json(), membersRes.json(), plansRes.json()
+    const [sessionJson, closedJson, salesJson, membersJson, plansJson] = await Promise.all([
+      sessionRes.json(), closedSessionRes.json(), salesRes.json(), membersRes.json(), plansRes.json()
     ])
     
     if (sessionJson.data) setSession(sessionJson.data)
     else setSession(null)
     
+    if (closedJson.data) setClosedSessions(closedJson.data)
+
     if (salesJson.data) setSales(salesJson.data)
     if (membersJson.data) setMembers(membersJson.data)
     if (plansJson.data) setPlans(plansJson.data.filter((p: any) => p.activo))
@@ -108,28 +116,39 @@ export default function CajaPage() {
     setOpenLoading(false)
     if (!json.error) {
       setShowOpen(false)
-      setOpenCash('0')
+      setOpenCash('')
       fetchData()
+    } else {
+      alert(json.error)
     }
   }
 
   const handleCloseCaja = async () => {
     if (!session) return
     setCloseLoading(true)
-    await fetch('/api/register-sessions', {
+    const summaryNotes = `Efectivo real contado: ${formatMoney(parseFloat(closeCash) || 0)}.\n${closeNotes ? 'Novedades: ' + closeNotes : ''}`
+
+    const res = await fetch('/api/register-sessions', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         session_id: session.id,
         final_cash: parseFloat(closeCash) || 0,
-        notes: closeNotes,
+        notes: summaryNotes,
       }),
     })
+    
+    const json = await res.json()
     setCloseLoading(false)
-    setShowClose(false)
-    setCloseCash('')
-    setCloseNotes('')
-    fetchData()
+    if (!json.error) {
+      setShowClose(false)
+      setCloseCash('')
+      setCloseNotes('')
+      setConteo({})
+      fetchData()
+    } else {
+      alert(json.error)
+    }
   }
 
   const addPago = () => setPagos([...pagos, { metodo: 'efectivo', monto: '' }])
@@ -176,33 +195,57 @@ export default function CajaPage() {
     })
     
     const json = await res.json()
-    setSaleLoading(false)
-    if (json.error) { setSaleError(json.error); return }
-
-    setShowSale(false)
-    setSaleForm({ member_id: '', plan_id: '' })
-    setPagos([{ metodo: 'efectivo', monto: '' }])
     
+    if (json.error) { 
+      setSaleLoading(false); 
+      setSaleError(json.error); 
+      return 
+    }
+
     // Auto-update member's expiration remotely
-    await fetch(`/api/members/${saleForm.member_id}`, {
+    const memberRes = await fetch(`/api/members/${saleForm.member_id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ plan_id: saleForm.plan_id, force_renewal: true })
     })
+    const memUpdateJson = await memberRes.json();
+    if (memUpdateJson.error) {
+      alert("La venta se procesó pero hubo un error actualizando la membresía: " + memUpdateJson.error);
+    }
+    
+    setSaleLoading(false)
+    setShowSale(false)
+    setSaleForm({ member_id: '', plan_id: '' })
+    setMemberSearch('')
+    setPagos([{ metodo: 'efectivo', monto: '' }])
     
     fetchData()
   }
 
   const formatMoney = (n: number) => `$${n.toLocaleString('es-CO', { minimumFractionDigits: 0 })}`
   const formatTime = (d: string) => new Date(d).toLocaleString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true })
+  const formatDateSimple = (d: string) => new Date(d).toLocaleDateString('es-CO')
 
   // Calculate session totals
   const sessionSales = session ? sales.filter((s) =>
     new Date(s.created_at) >= new Date(session.opened_at)
   ) : []
-  const totalVentas = sessionSales.reduce((s, sale) => s + sale.monto_total, 0)
   const totalEfectivo = sessionSales.reduce((s, sale) =>
     s + sale.sale_payments.filter((p) => p.metodo === 'efectivo').reduce((ss, p) => ss + p.monto, 0), 0)
+  const totalTarjeta = sessionSales.reduce((s, sale) =>
+    s + sale.sale_payments.filter((p) => p.metodo === 'tarjeta').reduce((ss, p) => ss + p.monto, 0), 0)
+  const totalTransferencia = sessionSales.reduce((s, sale) =>
+    s + sale.sale_payments.filter((p) => p.metodo === 'transferencia').reduce((ss, p) => ss + p.monto, 0), 0)
+
+  const DENOMINACIONES = [100000, 50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50]
+  const recentClosedSessions: RegisterSession[] = closedSessions.filter((cs: RegisterSession) => cs.closed_at !== null).slice(0, 6)
+  const totalConteo = Object.entries(conteo).reduce((sum, [denom, qty]) => sum + (parseInt(denom) * qty), 0)
+
+  useEffect(() => {
+    if (showClose) {
+      if (totalConteo > 0) setCloseCash(totalConteo.toString())
+    }
+  }, [totalConteo, showClose])
 
   if (loading) return <PageLoader />
 
@@ -240,18 +283,22 @@ export default function CajaPage() {
         {session ? (
           <>
             {/* Session stats */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="card border border-white/5">
-                <p className="text-xs text-white/40 mb-1">Base</p>
+                <p className="text-xs text-white/40 mb-1">Base Inicial</p>
                 <p className="text-xl font-display font-bold text-white">{formatMoney(session.initial_cash)}</p>
               </div>
               <div className="card border border-emerald-500/20 bg-emerald-500/5">
-                <p className="text-xs text-white/40 mb-1">Cobros del día</p>
-                <p className="text-xl font-display font-bold text-emerald-400">{formatMoney(totalVentas)}</p>
+                <p className="text-xs text-emerald-400/80 mb-1">Efectivo Total (Incluye base)</p>
+                <p className="text-xl font-display font-bold text-emerald-400">{formatMoney(session.initial_cash + totalEfectivo)}</p>
               </div>
-              <div className="card border border-brand-500/20 bg-brand-500/5">
-                <p className="text-xs text-white/40 mb-1">Efectivo total</p>
-                <p className="text-xl font-display font-bold text-brand-400">{formatMoney(session.initial_cash + totalEfectivo)}</p>
+              <div className="card border border-blue-500/20 bg-blue-500/5">
+                <p className="text-xs text-blue-400/80 mb-1">Transferencias</p>
+                <p className="text-xl font-display font-bold text-blue-400">{formatMoney(totalTransferencia)}</p>
+              </div>
+              <div className="card border border-purple-500/20 bg-purple-500/5">
+                <p className="text-xs text-purple-400/80 mb-1">Tarjetas</p>
+                <p className="text-xl font-display font-bold text-purple-400">{formatMoney(totalTarjeta)}</p>
               </div>
             </div>
 
@@ -291,13 +338,50 @@ export default function CajaPage() {
             </div>
           </>
         ) : (
-          <div className="card text-center py-16">
-            <svg className="w-20 h-20 mx-auto text-white/10 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-            </svg>
-            <p className="text-white/40 mb-2">La caja está cerrada</p>
-            <p className="text-white/25 text-xs mb-6">Abre la caja para comenzar a registrar cobros del día</p>
-            <Button onClick={() => setShowOpen(true)}>Abrir Caja</Button>
+          <div className="space-y-6">
+            <div className="card text-center py-16">
+              <svg className="w-20 h-20 mx-auto text-white/10 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+              <p className="text-white/40 mb-2">La caja está cerrada</p>
+              <p className="text-white/25 text-xs mb-6">Abre la caja para comenzar a registrar cobros del día</p>
+              <Button onClick={() => setShowOpen(true)}>Abrir Caja</Button>
+            </div>
+
+            {recentClosedSessions.length > 0 && (
+              <div>
+                <h2 className="text-sm font-semibold text-white/40 uppercase tracking-wider mb-3 px-1">
+                  Últimas Sesiones Cerradas
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {recentClosedSessions.map((cs) => {
+                    return (
+                      <div key={cs.id} className="card !p-4 border border-white/5 space-y-2">
+                        <div className="flex justify-between items-start mb-2">
+                          <p className="text-xs text-white/40">{formatDateSimple(cs.opened_at)}</p>
+                          <StatusBadge status="inactivo" size="sm" />
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-white/40">Base Inicial:</span>
+                          <span className="text-white/80">{formatMoney(cs.initial_cash)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm font-medium">
+                          <span className="text-white/60">Efectivo Final Reportado:</span>
+                          <span className={cs.final_cash && cs.final_cash > 0 ? "text-emerald-400" : "text-white/80"}>
+                            {formatMoney(cs.final_cash || 0)}
+                          </span>
+                        </div>
+                        {cs.notes && (
+                          <div className="text-xs text-white/40 border-t border-white/5 pt-2 mt-2 whitespace-pre-line">
+                            {cs.notes}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -310,7 +394,7 @@ export default function CajaPage() {
         footer={
           <>
             <Button variant="secondary" onClick={() => setShowOpen(false)}>Cancelar</Button>
-            <Button onClick={handleOpenCaja} loading={openLoading}>Abrir Caja</Button>
+            <Button onClick={handleOpenCaja} loading={openLoading} disabled={!openCash || parseFloat(openCash) <= 0}>Abrir Caja</Button>
           </>
         }
       >
@@ -330,45 +414,100 @@ export default function CajaPage() {
         open={showClose}
         onClose={() => setShowClose(false)}
         title="Cerrar Caja"
+        size="lg"
         footer={
           <>
             <Button variant="secondary" onClick={() => setShowClose(false)}>Cancelar</Button>
-            <Button onClick={handleCloseCaja} loading={closeLoading}>Cerrar Caja</Button>
+            <Button onClick={handleCloseCaja} loading={closeLoading} disabled={!closeCash}>Cerrar Caja</Button>
           </>
         }
       >
-        <div className="space-y-4">
-          {session && (
-            <div className="p-3 rounded-xl bg-surface-200 border border-white/5 space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-white/40">Base:</span>
-                <span className="text-white/70">{formatMoney(session.initial_cash)}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            {session && (
+              <div className="p-3 rounded-xl bg-surface-200 border border-white/5 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-white/40">Base:</span>
+                  <span className="text-white/70">{formatMoney(session.initial_cash)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/40">Cobros efectivo:</span>
+                  <span className="text-emerald-400">+{formatMoney(totalEfectivo)}</span>
+                </div>
+                <div className="flex justify-between border-t border-white/5 pt-2 font-semibold shadow-inner rounded p-2 bg-surface-300">
+                  <span className="text-white/60">Total Efectivo Esperado:</span>
+                  <span className="text-white">{formatMoney(session.initial_cash + totalEfectivo)}</span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-white/40">Ventas en efectivo:</span>
-                <span className="text-emerald-400">+{formatMoney(totalEfectivo)}</span>
-              </div>
-              <div className="flex justify-between border-t border-white/5 pt-2 font-semibold">
-                <span className="text-white/60">Efectivo esperado:</span>
-                <span className="text-white">{formatMoney(session.initial_cash + totalEfectivo)}</span>
-              </div>
+            )}
+            
+            <div className="space-y-4 border-t border-white/5 pt-4">
+              <Input
+                label="¿Cuánto efectivo exacto hay en caja?"
+                type="number"
+                value={closeCash}
+                onChange={(e) => setCloseCash(e.target.value)}
+                placeholder="Cuenta las monedas y billetes"
+                min="0"
+                step="50"
+              />
+              
+              {session && closeCash && (
+                <div className={`p-3 rounded-xl border flex justify-between items-center text-sm font-medium ${
+                  parseFloat(closeCash) >= (session.initial_cash + totalEfectivo) 
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                    : 'bg-red-500/10 border-red-500/20 text-red-400'
+                }`}>
+                  <span>{parseFloat(closeCash) >= (session.initial_cash + totalEfectivo) ? 'Diferencia (✓):' : 'Faltante en caja:'}</span>
+                  <span>{parseFloat(closeCash) >= (session.initial_cash + totalEfectivo) ? '+' : ''}{formatMoney(parseFloat(closeCash) - (session.initial_cash + totalEfectivo))}</span>
+                </div>
+              )}
+
+              <Input
+                label="Observaciones (opcional)"
+                value={closeNotes}
+                onChange={(e) => setCloseNotes(e.target.value)}
+                placeholder="Razón de diferencias, novedades..."
+              />
             </div>
-          )}
-          <Input
-            label="¿Cuánto efectivo hay en caja?"
-            type="number"
-            value={closeCash}
-            onChange={(e) => setCloseCash(e.target.value)}
-            placeholder="Contar y anotar"
-            min="0"
-            step="1000"
-          />
-          <Input
-            label="Observaciones (opcional)"
-            value={closeNotes}
-            onChange={(e) => setCloseNotes(e.target.value)}
-            placeholder="Novedades del día..."
-          />
+          </div>
+          
+          <div className="bg-surface-200/50 border border-white/5 p-4 rounded-xl flex flex-col">
+            <h3 className="text-sm font-semibold mb-3 flex justify-between">
+              Contador de Dinero
+              <span className="text-brand-400">{formatMoney(totalConteo)}</span>
+            </h3>
+            <p className="text-xs text-white/40 mb-3 leading-relaxed">
+              Introduce la <strong>cantidad</strong> de billetes/monedas. El total se calculará solo.
+            </p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 overflow-y-auto pr-1 flex-1 custom-scrollbar">
+              {DENOMINACIONES.reverse().map((denom) => (
+                <div key={denom} className="flex flex-col gap-1">
+                  <span className="text-[11px] text-white/40">{formatMoney(denom)} x</span>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={conteo[denom] || ''}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 0;
+                      setConteo(prev => ({ ...prev, [denom]: val }));
+                    }}
+                    className="input-field !py-1 !px-2 !text-sm text-center"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 pt-3 border-t border-white/5 flex justify-between">
+              <button 
+                type="button"
+                onClick={() => setConteo({})} 
+                className="text-xs text-white/40 hover:text-white transition-colors"
+              >
+                Limpiar
+              </button>
+            </div>
+          </div>
         </div>
       </Modal>
 
@@ -389,24 +528,62 @@ export default function CajaPage() {
             {saleError}
           </div>
         )}
-        <div className="space-y-5">
+        <div className="space-y-5 flex flex-col">
           
-          <div className="space-y-1.5">
-            <label className="input-label">Cliente</label>
-            <select
-              value={saleForm.member_id}
-              onChange={(e) => setSaleForm({ ...saleForm, member_id: e.target.value })}
-              className="input-field appearance-none cursor-pointer"
-            >
-              <option value="">— Buscar miembro —</option>
-              {members.map(m => (
-                <option key={m.id} value={m.id}>{m.nombre} {m.apellido}</option>
-              ))}
-            </select>
+          <div className="space-y-1.5 relative">
+            <label className="input-label">Cliente a renovar</label>
+            <input
+              type="text"
+              placeholder="Buscar por nombre..."
+              value={memberSearch}
+              onChange={(e) => {
+                setMemberSearch(e.target.value);
+                setShowMemberDropdown(true);
+                if (!e.target.value) setSaleForm({ ...saleForm, member_id: '' });
+              }}
+              onFocus={() => setShowMemberDropdown(true)}
+              className="input-field focus:border-brand-500"
+            />
+            {showMemberDropdown && memberSearch && (
+              <div className="absolute z-50 top-full mt-2 w-full max-h-48 overflow-y-auto bg-surface-200 border border-white/10 rounded-xl shadow-2xl flex flex-col p-1.5">
+                {members
+                  .filter(m => `${m.nombre} ${m.apellido}`.toLowerCase().includes(memberSearch.toLowerCase()))
+                  .slice(0, 5)
+                  .map(m => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => {
+                        setSaleForm({ ...saleForm, member_id: m.id });
+                        setMemberSearch(`${m.nombre} ${m.apellido}`);
+                        setShowMemberDropdown(false);
+                      }}
+                      className="text-left px-3 py-2.5 hover:bg-white/5 rounded-lg text-sm text-white/90 hover:text-white transition-colors"
+                    >
+                      <span className="font-medium">{m.nombre}</span> <span className="opacity-70">{m.apellido}</span>
+                    </button>
+                  ))}
+                  {members.filter(m => `${m.nombre} ${m.apellido}`.toLowerCase().includes(memberSearch.toLowerCase())).length === 0 && (
+                    <div className="px-3 py-2 text-sm text-white/40 text-center">Búsqueda sin resultados</div>
+                  )}
+              </div>
+            )}
+            
+            {/* Show selected member card */}
+            {saleForm.member_id && (
+              <div className="mt-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-sm flex justify-between items-center text-emerald-400">
+                <span className="opacity-80">Selección:</span>
+                <span className="font-semibold">{members.find(m => m.id === saleForm.member_id)?.nombre} {members.find(m => m.id === saleForm.member_id)?.apellido}</span>
+              </div>
+            )}
+            {/* Overlay background to close dropdown when clicked outside */}
+            {showMemberDropdown && (
+              <div className="fixed inset-0 z-40" onClick={() => setShowMemberDropdown(false)} />
+            )}
           </div>
 
           <div className="space-y-1.5">
-            <label className="input-label">Plan a renovar</label>
+            <label className="input-label">Membresía (Plan)</label>
             <select
               value={saleForm.plan_id}
               onChange={(e) => {
@@ -434,15 +611,15 @@ export default function CajaPage() {
 
           {/* Payment methods */}
           {selectedPlan && selectedPlan.precio > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="input-label">Métodos de pago</label>
+            <div className="border-t border-white/5 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <label className="input-label !mb-0">Cómo paga el cliente</label>
                 <button
                   type="button"
                   onClick={addPago}
-                  className="text-xs text-brand-400 hover:text-brand-300 font-medium"
+                  className="text-xs text-brand-400 hover:text-brand-300 font-medium px-2 py-1 bg-brand-500/10 rounded-lg transition-colors"
                 >
-                  + Agregar método
+                  + Agregar
                 </button>
               </div>
               <div className="space-y-2">
@@ -462,7 +639,7 @@ export default function CajaPage() {
                       value={pago.monto}
                       onChange={(e) => updatePago(i, 'monto', e.target.value)}
                       placeholder="$0"
-                      className="input-field w-28"
+                      className="input-field w-32"
                       min="0"
                       step="100"
                     />
@@ -470,9 +647,9 @@ export default function CajaPage() {
                       <button
                         type="button"
                         onClick={() => removePago(i)}
-                        className="w-8 h-8 rounded-lg hover:bg-red-500/10 flex items-center justify-center text-white/30 hover:text-red-400 transition-colors shrink-0"
+                        className="w-10 h-10 rounded-xl hover:bg-red-500/10 flex items-center justify-center text-white/30 hover:text-red-400 transition-colors shrink-0"
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>

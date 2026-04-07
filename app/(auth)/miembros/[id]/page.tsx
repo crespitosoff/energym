@@ -9,7 +9,7 @@ import Button from '@/components/ui/Button'
 import StatusBadge from '@/components/ui/StatusBadge'
 import Modal from '@/components/ui/Modal'
 import { PageLoader } from '@/components/ui/Spinner'
-import { formatDate, getDaysRemaining, getMembershipStatus } from '@/lib/utils/dates'
+import { formatDate, getDaysRemaining } from '@/lib/utils/dates'
 import type { MemberWithStatus, Plan } from '@/types/database'
 
 export default function MemberDetailPage() {
@@ -106,7 +106,7 @@ export default function MemberDetailPage() {
   if (loading) return <PageLoader />
   if (!member) return <div className="p-8 text-center text-white/40">Miembro no encontrado</div>
 
-  const status = getMembershipStatus(member.fecha_vencimiento)
+  const status = member.estado || 'inactivo'
   const daysRemaining = getDaysRemaining(member.fecha_vencimiento)
 
   return (
@@ -146,6 +146,7 @@ export default function MemberDetailPage() {
         <div className={`card border ${
           status === 'activo' ? 'border-emerald-500/20' :
           status === 'por_vencer' ? 'border-amber-500/20' :
+          status === 'inactivo' ? 'border-white/10' :
           'border-red-500/20'
         }`}>
           <div className="flex items-center justify-between">
@@ -154,16 +155,22 @@ export default function MemberDetailPage() {
               <StatusBadge status={status} />
             </div>
             <div className="text-right">
-              <p className="text-sm text-white/40">
-                {daysRemaining >= 0 ? 'Días restantes' : 'Días vencido'}
-              </p>
-              <p className={`text-2xl font-display font-bold ${
-                status === 'activo' ? 'text-emerald-400' :
-                status === 'por_vencer' ? 'text-amber-400' :
-                'text-red-400'
-              }`}>
-                {Math.abs(daysRemaining)}
-              </p>
+              {status === 'inactivo' ? (
+                <p className="text-sm text-white/30">Sin plan activo</p>
+              ) : (
+                <>
+                  <p className="text-sm text-white/40">
+                    {daysRemaining >= 0 ? 'Días restantes' : 'Días vencido'}
+                  </p>
+                  <p className={`text-2xl font-display font-bold ${
+                    status === 'activo' ? 'text-emerald-400' :
+                    status === 'por_vencer' ? 'text-amber-400' :
+                    'text-red-400'
+                  }`}>
+                    {Math.abs(daysRemaining)}
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -181,15 +188,18 @@ export default function MemberDetailPage() {
 
               <div className="space-y-1.5">
                 <label className="input-label">Plan</label>
-                <select value={form.plan_id} onChange={(e) => updateField('plan_id', e.target.value)} className="input-field appearance-none">
-                  <option value="">Sin plan</option>
+                <select value={form.plan_id} onChange={(e) => updateField('plan_id', e.target.value)} className="input-field appearance-none" required>
+                  <option value="" disabled>— Selecciona plan —</option>
                   {plans.map((p) => (
                     <option key={p.id} value={p.id}>{p.nombre} ({p.dias_duracion}d)</option>
                   ))}
                 </select>
               </div>
 
-              <Input label="Fecha de Inicio" type="date" value={form.fecha_inicio} onChange={(e) => updateField('fecha_inicio', e.target.value)} required />
+              <div className="pt-2 border-t border-white/5 space-y-2">
+                <InfoRow label="Fecha de Inicio" value={formatDate(member.fecha_inicio)} />
+                <InfoRow label="Fecha de Vencimiento" value={formatDate(member.fecha_vencimiento)} />
+              </div>
 
               <div className="flex gap-3 pt-2">
                 <Button onClick={handleSave} loading={saving} className="flex-1">Guardar</Button>
