@@ -13,14 +13,6 @@ interface RegisterSession {
   opened_at: string
 }
 
-const getBogotaDate = () => {
-  const d = new Date(new Date().toLocaleString("es-CO", { timeZone: "America/Bogota" }))
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 export default function NuevoMiembroPage() {
   const router = useRouter()
   const { role } = useUser()
@@ -37,7 +29,7 @@ export default function NuevoMiembroPage() {
     telefono: '',
     fecha_nacimiento: '',
     plan_id: '',
-    fecha_inicio: getBogotaDate(),
+    fecha_inicio: new Date().toISOString().split('T')[0],
   })
 
   useEffect(() => {

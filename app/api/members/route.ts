@@ -38,17 +38,6 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ data, error: null, count: count || 0, page, limit })
 }
 
-const getBogotaTimestamp = () => {
-  const d = new Date(new Date().toLocaleString("es-CO", { timeZone: "America/Bogota" }))
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  const hours = String(d.getHours()).padStart(2, '0')
-  const minutes = String(d.getMinutes()).padStart(2, '0')
-  const seconds = String(d.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}-05:00`
-}
-
 export async function POST(request: NextRequest) {
   const auth = await getAuthUser()
   if (!auth) {
@@ -89,8 +78,6 @@ export async function POST(request: NextRequest) {
       fecha_nacimiento: fecha_nacimiento || null,
       created_by: auth.user.id,
       updated_by: auth.user.id,
-      created_at: getBogotaTimestamp(),
-      updated_at: getBogotaTimestamp(),
     } as any)
     .select()
     .single()
