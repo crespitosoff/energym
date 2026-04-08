@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useUser } from '@/lib/hooks/useUser'
 import Header from '@/components/layout/Header'
@@ -13,7 +13,7 @@ import type { MemberWithStatus } from '@/types/database'
 
 type FilterStatus = 'all' | 'activo' | 'por_vencer' | 'vencido' | 'inactivo'
 
-export default function MiembrosPage() {
+function MiembrosList() {
   const { role } = useUser()
   const searchParams = useSearchParams()
   
@@ -173,5 +173,13 @@ export default function MiembrosPage() {
         )}
       </div>
     </>
+  )
+}
+
+export default function MiembrosPage() {
+  return (
+    <Suspense fallback={<div>Cargando...</div>}>
+      <MiembrosList />
+    </Suspense>
   )
 }
