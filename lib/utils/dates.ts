@@ -26,12 +26,10 @@ export function getMembershipStatus(fechaVencimiento: string): MembershipStatus 
 /**
  * Format date to locale string
  */
-export function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString('es-CO', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
+export function formatDate(date: string | null): string {
+  if (!date) return ''
+  const [year, month, day] = date.split('T')[0].split('-')
+  return `${day}/${month}/${year}`
 }
 
 /**

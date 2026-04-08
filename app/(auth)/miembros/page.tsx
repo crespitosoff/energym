@@ -8,16 +8,21 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import { PageLoader } from '@/components/ui/Spinner'
 import { formatDate, getMembershipStatus } from '@/lib/utils/dates'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import type { MemberWithStatus } from '@/types/database'
 
 type FilterStatus = 'all' | 'activo' | 'por_vencer' | 'vencido' | 'inactivo'
 
 export default function MiembrosPage() {
   const { role } = useUser()
+  const searchParams = useSearchParams()
+  
   const [members, setMembers] = useState<MemberWithStatus[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>(
+    (searchParams.get('status') as FilterStatus) || 'all'
+  )
 
   useEffect(() => {
     fetchMembers()

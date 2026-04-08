@@ -48,7 +48,7 @@ export default function DashboardPage() {
       icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
     { label: 'Por Vencer', filter: 'por_vencer', value: stats?.por_vencer || 0, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20',
       icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg> },
-    { label: 'Vencidos / Inactivos', filter: 'vencido', value: stats?.vencidos || 0, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20',
+    { label: 'Vencidos', filter: 'vencido', value: stats?.vencidos || 0, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20',
       icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg> },
   ]
 

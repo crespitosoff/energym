@@ -58,8 +58,8 @@ export default function NuevoMiembroPage() {
       setError('Nombre y apellido son obligatorios')
       return
     }
-    if (!form.telefono.trim()) {
-      setError('El teléfono es obligatorio')
+    if (!/^\d{10}$/.test(form.telefono.trim())) {
+      setError('El teléfono debe tener exactamente 10 dígitos numéricos')
       return
     }
     if (!form.plan_id) {

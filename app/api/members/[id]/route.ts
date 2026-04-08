@@ -62,6 +62,9 @@ export async function PUT(
     .single()
 
   if (error) {
+    if (error.code === '23505') {
+      return NextResponse.json({ data: null, error: 'Este teléfono ya está registrado' }, { status: 400 })
+    }
     return NextResponse.json({ data: null, error: error.message }, { status: 500 })
   }
 
