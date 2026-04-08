@@ -51,8 +51,8 @@ export async function POST(request: NextRequest) {
   const body = await request.json()
   const { nombre, apellido, email, telefono, plan_id, fecha_inicio, fecha_nacimiento, pagos, register_session_id } = body
 
-  if (!nombre || !apellido || !email || !fecha_inicio) {
-    return NextResponse.json({ data: null, error: 'Campos requeridos: nombre, apellido, email, fecha_inicio' }, { status: 400 })
+  if (!nombre || !apellido || !telefono || !fecha_inicio) {
+    return NextResponse.json({ data: null, error: 'Campos requeridos: nombre, apellido, teléfono, fecha_inicio' }, { status: 400 })
   }
 
   if (!plan_id) {

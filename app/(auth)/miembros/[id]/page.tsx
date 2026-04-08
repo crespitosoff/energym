@@ -50,8 +50,8 @@ export default function MemberDetailPage() {
         setForm({
           nombre: memberJson.data.nombre,
           apellido: memberJson.data.apellido,
-          email: memberJson.data.email,
-          telefono: memberJson.data.telefono || '',
+          email: memberJson.data.email || '',
+          telefono: (memberJson.data.telefono || '').replace(/^\+57\s*/, ''),
           plan_id: memberJson.data.plan_id || '',
           fecha_inicio: memberJson.data.fecha_inicio,
         })
@@ -64,13 +64,29 @@ export default function MemberDetailPage() {
 
   const handleSave = async () => {
     setError('')
+
+    if (!form.nombre.trim() || !form.apellido.trim()) {
+      setError('Nombre y apellido son obligatorios')
+      return
+    }
+    if (!form.telefono.trim()) {
+      setError('El teléfono es obligatorio')
+      return
+    }
+
     setSaving(true)
+
+    const toTitleCase = (str: string) => str.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
 
     const res = await fetch(`/api/members/${params.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...form,
+        nombre: toTitleCase(form.nombre),
+        apellido: toTitleCase(form.apellido),
+        email: form.email.trim() || null,
+        telefono: form.telefono.trim() ? `+57 ${form.telefono.trim()}` : null,
         plan_id: form.plan_id || null,
       }),
     })
@@ -183,8 +199,15 @@ export default function MemberDetailPage() {
                 <Input label="Nombre" value={form.nombre} onChange={(e) => updateField('nombre', e.target.value)} required />
                 <Input label="Apellido" value={form.apellido} onChange={(e) => updateField('apellido', e.target.value)} required />
               </div>
-              <Input label="Email" type="email" value={form.email} onChange={(e) => updateField('email', e.target.value)} required />
-              <Input label="Teléfono" type="tel" value={form.telefono} onChange={(e) => updateField('telefono', e.target.value)} />
+              <Input label="Email" type="email" value={form.email} onChange={(e) => updateField('email', e.target.value)} />
+              <Input 
+                label="Teléfono *" 
+                type="tel" 
+                value={form.telefono} 
+                onChange={(e) => updateField('telefono', e.target.value)} 
+                icon={<span className="text-white/50 text-sm font-medium pr-1 border-r border-white/10 mr-1">+57</span>}
+                required 
+              />
 
               <div className="space-y-1.5">
                 <label className="input-label">Plan</label>

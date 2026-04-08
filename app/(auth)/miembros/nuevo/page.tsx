@@ -22,6 +22,12 @@ export default function NuevoMiembroPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const getBogotaTodayDate = () => {
+    return new Intl.DateTimeFormat('en-CA', { 
+      timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' 
+    }).format(new Date())
+  }
+
   const [form, setForm] = useState({
     nombre: '',
     apellido: '',
@@ -29,7 +35,7 @@ export default function NuevoMiembroPage() {
     telefono: '',
     fecha_nacimiento: '',
     plan_id: '',
-    fecha_inicio: new Date().toISOString().split('T')[0],
+    fecha_inicio: getBogotaTodayDate(),
   })
 
   useEffect(() => {
@@ -52,8 +58,8 @@ export default function NuevoMiembroPage() {
       setError('Nombre y apellido son obligatorios')
       return
     }
-    if (!form.email.trim()) {
-      setError('El correo electrónico es obligatorio')
+    if (!form.telefono.trim()) {
+      setError('El teléfono es obligatorio')
       return
     }
     if (!form.plan_id) {
@@ -69,10 +75,15 @@ export default function NuevoMiembroPage() {
 
     setLoading(true)
 
+    const toTitleCase = (str: string) => str.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+
     const payload = {
       ...form,
+      nombre: toTitleCase(form.nombre),
+      apellido: toTitleCase(form.apellido),
+      email: form.email.trim() || null,
+      telefono: form.telefono.trim() ? `+57 ${form.telefono.trim()}` : null,
       fecha_nacimiento: form.fecha_nacimiento || null,
-      telefono: form.telefono || null,
       register_session_id: session?.id || null
     }
 
@@ -153,21 +164,22 @@ export default function NuevoMiembroPage() {
                 </div>
 
                 <Input
-                  label="Correo electrónico *"
+                  label="Correo electrónico"
                   type="email"
                   value={form.email}
                   onChange={(e) => updateField('email', e.target.value)}
                   placeholder="juan@email.com"
-                  required
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
-                    label="Teléfono"
+                    label="Teléfono *"
                     type="tel"
                     value={form.telefono}
                     onChange={(e) => updateField('telefono', e.target.value)}
-                    placeholder="+57 300 123 4567"
+                    placeholder="300 123 4567"
+                    icon={<span className="text-white/50 text-sm font-medium pr-1 border-r border-white/10 mr-1">+57</span>}
+                    required
                   />
                   <Input
                     label="Fecha de nacimiento"

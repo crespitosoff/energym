@@ -42,13 +42,13 @@ export default function DashboardPage() {
   const formatMoney = (n: number) => `$${n.toLocaleString('es-CO', { minimumFractionDigits: 0 })}`
 
   const statCards = [
-    { label: 'Total Miembros', value: stats?.total || 0, color: 'text-brand-400', bg: 'bg-brand-500/10', border: 'border-brand-500/20',
+    { label: 'Total Miembros', filter: 'all', value: stats?.total || 0, color: 'text-brand-400', bg: 'bg-brand-500/10', border: 'border-brand-500/20',
       icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg> },
-    { label: 'Activos', value: stats?.activos || 0, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20',
+    { label: 'Activos', filter: 'activo', value: stats?.activos || 0, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20',
       icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
-    { label: 'Por Vencer', value: stats?.por_vencer || 0, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20',
+    { label: 'Por Vencer', filter: 'por_vencer', value: stats?.por_vencer || 0, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20',
       icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg> },
-    { label: 'Vencidos', value: stats?.vencidos || 0, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20',
+    { label: 'Vencidos / Inactivos', filter: 'vencido', value: stats?.vencidos || 0, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20',
       icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg> },
   ]
 
@@ -74,13 +74,17 @@ export default function DashboardPage() {
         {/* Member Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           {statCards.map((stat) => (
-            <div key={stat.label} className={`card border ${stat.border} hover:shadow-glass transition-all duration-300`}>
+            <Link 
+              key={stat.label} 
+              href={`/miembros${stat.filter !== 'all' ? `?status=${stat.filter}` : ''}`} 
+              className={`card border ${stat.border} hover:shadow-glass hover:bg-white/5 transition-all duration-300 block`}
+            >
               <div className={`${stat.bg} w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${stat.color}`}>
                 {stat.icon}
               </div>
               <p className="text-2xl lg:text-3xl font-display font-bold text-white">{stat.value}</p>
               <p className="text-xs text-white/40 mt-1">{stat.label}</p>
-            </div>
+            </Link>
           ))}
         </div>
 
@@ -131,33 +135,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Quick Actions */}
-        {role && ['admin', 'asistente'].includes(role) && (
-          <div>
-            <h2 className="text-xs font-semibold text-white/30 uppercase tracking-wider mb-3">Acciones rápidas</h2>
-            <div className="grid grid-cols-2 gap-3">
-              <Link href="/miembros" className="card-interactive flex flex-col items-center gap-3 text-center !py-5">
-                <div className="w-11 h-11 rounded-xl bg-brand-500/10 flex items-center justify-center text-brand-400">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-                  </svg>
-                </div>
-                <p className="text-xs font-medium text-white/70">Miembros</p>
-              </Link>
 
-              {role === 'admin' && (
-                <Link href="/planes" className="card-interactive flex flex-col items-center gap-3 text-center !py-5">
-                  <div className="w-11 h-11 rounded-xl bg-energy-violet/10 flex items-center justify-center text-energy-violet">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15a2.25 2.25 0 012.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
-                    </svg>
-                  </div>
-                  <p className="text-xs font-medium text-white/70">Planes</p>
-                </Link>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </>
   )
