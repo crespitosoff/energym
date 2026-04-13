@@ -50,7 +50,9 @@ export async function PUT(
   const updateData: Record<string, unknown> = { updated_by: auth.user.id }
   if (nombre !== undefined) updateData.nombre = nombre
   if (apellido !== undefined) updateData.apellido = apellido
-  if (email !== undefined) updateData.email = email
+  if (email !== undefined) {
+    updateData.email = email && email.trim() !== '' ? email.trim() : null
+  }
   if (telefono !== undefined) updateData.telefono = telefono
   if (plan_id !== undefined) updateData.plan_id = plan_id
 
@@ -63,7 +65,7 @@ export async function PUT(
 
   if (error) {
     if (error.code === '23505') {
-      return NextResponse.json({ data: null, error: 'Este teléfono ya está registrado' }, { status: 400 })
+      return NextResponse.json({ data: null, error: 'Este número de teléfono ya está registrado' }, { status: 400 })
     }
     return NextResponse.json({ data: null, error: error.message }, { status: 500 })
   }

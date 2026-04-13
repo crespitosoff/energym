@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     .insert({
       nombre,
       apellido,
-      email,
+      email: email && email.trim() !== '' ? email.trim() : null,
       telefono: telefono || null,
       plan_id,
       fecha_inicio,
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     if (error.code === '23505') {
-      return NextResponse.json({ data: null, error: 'Este teléfono ya está registrado' }, { status: 400 })
+      return NextResponse.json({ data: null, error: 'Este número de teléfono ya está registrado' }, { status: 400 })
     }
     return NextResponse.json({ data: null, error: error.message }, { status: 500 })
   }
