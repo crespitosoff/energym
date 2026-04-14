@@ -56,3 +56,17 @@ export function calculateExpirationDate(
   start.setDate(start.getDate() + diasDuracion)
   return start.toISOString().split('T')[0]
 }
+
+/**
+ * Format a UTC timestamp to Colombia local date (DD/MM/YYYY)
+ * Useful for created_at / updated_at fields stored in UTC
+ */
+export function formatDateTimeBogota(utcDate: string | null): string {
+  if (!utcDate) return ''
+  return new Intl.DateTimeFormat('es-CO', {
+    timeZone: 'America/Bogota',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(utcDate))
+}

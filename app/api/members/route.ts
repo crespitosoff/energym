@@ -10,23 +10,35 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const search = searchParams.get('search') || ''
   const status = searchParams.get('status') || 'all'
+  const planId = searchParams.get('planId') || 'all'
+  const sortBy = searchParams.get('sortBy') || 'created_at'
+  const order = searchParams.get('order') || 'desc'
   const page = parseInt(searchParams.get('page') || '1')
   const limit = parseInt(searchParams.get('limit') || '50')
   const offset = (page - 1) * limit
+
+  // Validate sortBy to prevent injection
+  const allowedSorts = ['created_at', 'nombre', 'fecha_vencimiento']
+  const safeSortBy = allowedSorts.includes(sortBy) ? sortBy : 'created_at'
+  const ascending = order === 'asc'
 
   let query = auth.supabase
     .from('members_with_status')
     .select('*', { count: 'exact' })
     .eq('activo', true)
-    .order('created_at', { ascending: false })
+    .order(safeSortBy, { ascending })
     .range(offset, offset + limit - 1)
 
   if (search) {
-    query = query.or(`nombre.ilike.%${search}%,apellido.ilike.%${search}%,email.ilike.%${search}%`)
+    query = query.or(`nombre.ilike.%${search}%,apellido.ilike.%${search}%,email.ilike.%${search}%,telefono.ilike.%${search}%`)
   }
 
   if (status !== 'all') {
     query = query.eq('estado', status)
+  }
+
+  if (planId !== 'all') {
+    query = query.eq('plan_id', planId)
   }
 
   const { data, error, count } = await query

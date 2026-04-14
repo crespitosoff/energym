@@ -9,7 +9,7 @@ import Button from '@/components/ui/Button'
 import StatusBadge from '@/components/ui/StatusBadge'
 import Modal from '@/components/ui/Modal'
 import { PageLoader } from '@/components/ui/Spinner'
-import { formatDate, getDaysRemaining } from '@/lib/utils/dates'
+import { formatDate, getDaysRemaining, formatDateTimeBogota } from '@/lib/utils/dates'
 import type { MemberWithStatus, Plan } from '@/types/database'
 
 export default function MemberDetailPage() {
@@ -237,6 +237,7 @@ export default function MemberDetailPage() {
               <InfoRow label="Plan" value={member.plan_nombre || 'Sin plan'} />
               <InfoRow label="Fecha de Inicio" value={formatDate(member.fecha_inicio)} />
               <InfoRow label="Fecha de Vencimiento" value={formatDate(member.fecha_vencimiento)} />
+              <InfoRow label="Fecha de Registro" value={formatDateTimeBogota(member.created_at)} />
             </div>
           )}
         </div>
