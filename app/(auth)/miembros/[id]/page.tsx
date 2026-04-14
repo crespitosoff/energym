@@ -211,12 +211,17 @@ export default function MemberDetailPage() {
 
               <div className="space-y-1.5">
                 <label className="input-label">Plan</label>
-                <select value={form.plan_id} onChange={(e) => updateField('plan_id', e.target.value)} className="input-field appearance-none" required>
-                  <option value="" disabled>— Selecciona plan —</option>
-                  {plans.map((p) => (
-                    <option key={p.id} value={p.id}>{p.nombre} ({p.dias_duracion}d)</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select value={form.plan_id} onChange={(e) => updateField('plan_id', e.target.value)} className="input-field appearance-none cursor-pointer !pr-8" required>
+                    <option value="" disabled>— Selecciona plan —</option>
+                    {plans.map((p) => (
+                      <option key={p.id} value={p.id}>{p.nombre} ({p.dias_duracion}d)</option>
+                    ))}
+                  </select>
+                  <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  </svg>
+                </div>
               </div>
 
               <div className="pt-2 border-t border-white/5 space-y-2">
@@ -256,7 +261,7 @@ export default function MemberDetailPage() {
         }
       >
         <p>¿Estás seguro de que deseas eliminar a <strong className="text-white">{member.nombre} {member.apellido}</strong>?</p>
-        <p className="mt-2 text-white/40 text-xs">Esta acción desactivará al miembro. Se puede reactivar desde la base de datos.</p>
+        <p className="mt-2 text-red-400/70 text-xs">⚠ Esta acción es permanente. El miembro y todos sus datos serán eliminados definitivamente del sistema.</p>
       </Modal>
     </>
   )

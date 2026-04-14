@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useUser } from '@/lib/hooks/useUser'
 
@@ -50,12 +51,14 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="p-6 border-b border-white/5">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-brand flex items-center justify-center">
-            <span className="text-white font-bold text-lg">E</span>
-          </div>
-          <span className="font-display text-xl font-bold text-white">
-            Ener<span className="text-brand-400">Gym</span>
-          </span>
+          <Image
+            src="/logo.png"
+            alt="Logo"
+            width={100}
+            height={100}
+            className="rounded-xl"
+            priority
+          />
         </Link>
       </div>
 

@@ -206,22 +206,27 @@ export default function NuevoMiembroPage() {
                   <label className="input-label">
                     Plan de Membresía <span className="text-red-400">*</span>
                   </label>
-                  <select
-                    value={form.plan_id}
-                    onChange={(e) => {
-                      updateField('plan_id', e.target.value)
-                    }}
-                    className="input-field appearance-none cursor-pointer"
-                    required
-                  >
-                    <option value="">— Selecciona un plan —</option>
-                    {plans.map((plan) => (
-                      <option key={plan.id} value={plan.id}>
-                        {plan.nombre} ({plan.dias_duracion} días)
-                        {plan.precio > 0 ? ` — $${plan.precio.toLocaleString('es-CO')}` : ''}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={form.plan_id}
+                      onChange={(e) => {
+                        updateField('plan_id', e.target.value)
+                      }}
+                      className="input-field appearance-none cursor-pointer !pr-8"
+                      required
+                    >
+                      <option value="">— Selecciona un plan —</option>
+                      {plans.map((plan) => (
+                        <option key={plan.id} value={plan.id}>
+                          {plan.nombre} ({plan.dias_duracion} días)
+                          {plan.precio > 0 ? ` — $${plan.precio.toLocaleString('es-CO')}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                    </svg>
+                  </div>
                   {plans.length === 0 && (
                     <p className="text-xs text-amber-400/70 mt-1">
                       ⚠ No hay planes activos. Crea un plan antes de registrar miembros.

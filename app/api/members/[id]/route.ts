@@ -133,7 +133,7 @@ export async function DELETE(
 
   const { error } = await auth.supabase
     .from('members')
-    .update({ activo: false, updated_by: auth.user.id })
+    .delete()
     .eq('id', id)
 
   if (error) {

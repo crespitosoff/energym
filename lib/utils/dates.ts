@@ -33,16 +33,17 @@ export function formatDate(date: string | null): string {
 }
 
 /**
- * Get days remaining until expiration
+ * Get days remaining until expiration (Bogotá timezone)
+ * Returns: positive = days left, 0 = expires today, negative = days overdue
  */
 export function getDaysRemaining(fechaVencimiento: string): number {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const expDate = new Date(fechaVencimiento)
-  expDate.setHours(0, 0, 0, 0)
-  return Math.ceil(
-    (expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-  )
+  // Get today in Colombia timezone as YYYY-MM-DD
+  const bogotaToday = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(new Date())
+  const today = new Date(bogotaToday + 'T00:00:00')
+  const expDate = new Date(fechaVencimiento.split('T')[0] + 'T00:00:00')
+  return Math.round((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 }
 
 /**

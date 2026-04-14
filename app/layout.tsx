@@ -10,10 +10,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "EnerGym — Gestión de Gimnasio",
+  title: "Gestión de Gimnasio",
   description: "Sistema inteligente de gestión de membresías para gimnasios. Controla clientes, planes y vencimientos.",
-  keywords: ["gimnasio", "gestión", "membresías", "EnerGym"],
-  authors: [{ name: "EnerGym" }],
+  keywords: ["gimnasio", "gestión", "membresías"],
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({

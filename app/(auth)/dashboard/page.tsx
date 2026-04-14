@@ -3,32 +3,39 @@
 import { useEffect, useState } from 'react'
 import { useUser } from '@/lib/hooks/useUser'
 import Header from '@/components/layout/Header'
-import StatusBadge from '@/components/ui/StatusBadge'
 import { PageLoader } from '@/components/ui/Spinner'
 import { formatDate, getDaysRemaining } from '@/lib/utils/dates'
 import Link from 'next/link'
 import type { MemberStats } from '@/types/api'
 import type { MemberWithStatus } from '@/types/database'
 
+interface PlanMetric {
+  plan_id: string
+  plan_nombre: string
+  count: number
+}
+
 export default function DashboardPage() {
   const { role } = useUser()
   const [stats, setStats] = useState<MemberStats | null>(null)
   const [expiring, setExpiring] = useState<MemberWithStatus[]>([])
+  const [planMetrics, setPlanMetrics] = useState<PlanMetric[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       try {
-        const fetches = [
+        const [statsRes, expiringRes, planMetricsRes] = await Promise.all([
           fetch('/api/members/stats'),
-          fetch('/api/members?status=por_vencer&limit=5'),
-        ]
-        const [statsRes, expiringRes] = await Promise.all(fetches)
-        const [statsJson, expiringJson] = await Promise.all([
-          statsRes.json(), expiringRes.json(),
+          fetch('/api/members?status=por_vencer&limit=5&sortBy=fecha_vencimiento&order=asc'),
+          fetch('/api/members/plan-metrics'),
+        ])
+        const [statsJson, expiringJson, planMetricsJson] = await Promise.all([
+          statsRes.json(), expiringRes.json(), planMetricsRes.json(),
         ])
         if (statsJson.data) setStats(statsJson.data)
         if (expiringJson.data) setExpiring(expiringJson.data)
+        if (planMetricsJson.data) setPlanMetrics(planMetricsJson.data)
       } catch {
         console.error('Error loading dashboard')
       }
@@ -38,8 +45,6 @@ export default function DashboardPage() {
   }, [])
 
   if (loading) return <PageLoader />
-
-  const formatMoney = (n: number) => `$${n.toLocaleString('es-CO', { minimumFractionDigits: 0 })}`
 
   const statCards = [
     { label: 'Total Miembros', filter: 'all', value: stats?.total || 0, color: 'text-brand-400', bg: 'bg-brand-500/10', border: 'border-brand-500/20',
@@ -74,9 +79,9 @@ export default function DashboardPage() {
         {/* Member Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           {statCards.map((stat) => (
-            <Link 
-              key={stat.label} 
-              href={`/miembros${stat.filter !== 'all' ? `?status=${stat.filter}` : ''}`} 
+            <Link
+              key={stat.label}
+              href={`/miembros${stat.filter !== 'all' ? `?status=${stat.filter}` : ''}`}
               className={`card border ${stat.border} hover:shadow-glass hover:bg-white/5 transition-all duration-300 block`}
             >
               <div className={`${stat.bg} w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${stat.color}`}>
@@ -88,7 +93,7 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Expiring Soon */}
+        {/* Expiring Soon — sorted by closest first */}
         {expiring.length > 0 && (
           <div className="card">
             <div className="flex items-center justify-between mb-4">
@@ -135,6 +140,29 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Metrics by Plan */}
+        {planMetrics.length > 0 && (
+          <div className="card">
+            <h2 className="text-sm font-semibold text-white/70 flex items-center gap-2 mb-4">
+              <svg className="w-4 h-4 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
+              </svg>
+              Miembros activos por plan
+            </h2>
+            <div className="grid grid-cols-2 gap-2">
+              {planMetrics.map((pm) => (
+                <Link
+                  key={pm.plan_id}
+                  href={`/miembros?plan=${pm.plan_id}&status=activo`}
+                  className="flex items-center justify-between p-3 rounded-xl bg-surface-200/50 border border-white/5 hover:bg-white/5 transition-colors group"
+                >
+                  <p className="text-xs text-white/60 font-medium truncate group-hover:text-white/80">{pm.plan_nombre}</p>
+                  <span className="text-lg font-display font-bold text-brand-400 ml-2">{pm.count}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
     </>

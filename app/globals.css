@@ -152,6 +152,18 @@
            focus:bg-surface-200;
   }
 
+  /* Custom dark select dropdowns */
+  select.input-field {
+    color-scheme: dark;
+    background-image: none;
+  }
+
+  select.input-field option {
+    background-color: #1a1a25;
+    color: #e2e8f0;
+    padding: 8px 12px;
+  }
+
   .input-label {
     @apply block text-sm font-medium text-white/70 mb-1.5;
   }

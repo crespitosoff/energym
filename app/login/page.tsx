@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
+import Image from 'next/image'
 
 const ERROR_MESSAGES: Record<string, string> = {
   'Invalid login credentials': 'Email o contraseña incorrectos. Verifica tus datos e intenta de nuevo.',
@@ -55,9 +56,14 @@ export default function LoginPage() {
         {/* Logo + Title */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-6">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-brand flex items-center justify-center shadow-glow">
-              <span className="text-white font-bold text-2xl font-display">E</span>
-            </div>
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={100}
+              height={100}
+              className="rounded-2xl shadow-glow"
+              priority
+            />
           </div>
           <h1 className="text-3xl font-display font-bold text-white">
             Bienvenido
